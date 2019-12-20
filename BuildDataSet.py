@@ -19,10 +19,10 @@ columns = ['Abs_MAG', 'TEFF', 'Grav', 'Metal']
 for i, id in enumerate(ids):
 
     parallax_error_perc = parallax_err[i] / parallax[i]
-    if parallax_error_perc < 0.1:
+    if parallax_error_perc < 0.5:
         Abs_mag = Kmag[i] - 5 * np.log10((1 / parallax[i]) / 10) - extinction[i]
         star = pd.DataFrame([[Abs_mag, TEFF[i], Grav[i], Metal[i]]], columns=columns)
         stars = stars.append(star, ignore_index=True)
         print(i)
 
-stars.to_csv('DATA.csv', index=False)
+stars.to_csv('Full_DATA.csv', index=False)
