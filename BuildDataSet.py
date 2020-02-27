@@ -14,18 +14,18 @@ Kmag = data[1].data['K']
 extinction = data[1].data['AK_WISE']
 
 stars = pd.DataFrame()
-columns = ['Abs_MAG', 'TEFF', 'Grav', 'Metal']
+columns = ['Abs_MAG', 'TEFF', 'Grav', 'Metal', 'Apparent', 'Extinction', 'Parallax_error']
 
 for i, id in enumerate(ids):
 
     parallax_error_perc = parallax_err[i] / parallax[i]
-    if parallax_error_perc < 0.15:
+    if parallax_error_perc < 0.05:
         Abs_mag = Kmag[i] - 5 * np.log10((1 / (parallax[i]/1000)) / 10) - extinction[i]
-        star = pd.DataFrame([[Abs_mag, TEFF[i], Grav[i], Metal[i]]], columns=columns)
+        star = pd.DataFrame([[Abs_mag, TEFF[i], Grav[i], Metal[i], Kmag[i], extinction[i], parallax_error_perc]], columns=columns)
         stars = stars.append(star, ignore_index=True)
         print(i)
 
 stars = stars[(stars['Abs_MAG'] < 100) & (stars['TEFF'] > 0) & (stars['Grav'] > 0) & (stars['Metal'] > -9000) & (
         stars['Abs_MAG'] > -40)]
 
-stars.to_csv('15_DATA.csv', index=False)
+stars.to_csv('05_withapparent_DATA.csv', index=False)

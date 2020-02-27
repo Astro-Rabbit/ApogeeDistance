@@ -7,12 +7,19 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-data = pd.read_csv('15_DATA.csv')
-
+data = pd.read_csv('80_withapparent_DATA.csv')
 
 
 train_dataset = data.sample(frac=0.8, random_state=0)
 test_dataset = data.drop(train_dataset.index)
+
+Apparent = train_dataset.pop('Apparent')
+Extinction = train_dataset.pop('Extinction')
+parallax_error = train_dataset.pop('Parallax_error')
+
+Apparent_test = test_dataset.pop('Apparent')
+Extinction_test = test_dataset.pop('Extinction')
+parallax_error_test = test_dataset.pop('Parallax_error')
 
 # sns.pairplot(train_dataset[["Abs_MAG", "TEFF", "Grav", "Metal"]], diag_kind="kde")
 
@@ -30,6 +37,7 @@ def norm(x):
 
 normed_train_data = norm(train_dataset)
 normed_test_data = norm(test_dataset)
+
 
 def build_model():
     model = tf.keras.Sequential([
@@ -62,12 +70,17 @@ history = model.fit(
 
 plotter = tfdocs.plots.HistoryPlotter(smoothing_std=2)
 
+
 def plot_loss():
     plotter.plot({'Basic': history}, metric="mse")
     plt.ylim([0, 0.6])
     plt.ylabel('MAE [Abs_Mag]')
 
+
 test_predictions = model.predict(normed_test_data).flatten()
+perc_errors = (test_labels - test_predictions) / test_predictions
+
+parallaxs = 10*10**((test_predictions+Extinction_test-Apparent_test)/-5)
 
 def plot_predict():
     a = plt.axes(aspect='equal')
@@ -79,21 +92,8 @@ def plot_predict():
     plt.ylim(lims)
     _ = plt.plot(lims, lims)
 
-def plot_hr():
-    plt.figure()
-    plt.xlim(7500, 3000)
-    plt.xscale('log')
-    plt.ylim(10, -12)
-    plt.xlabel('Temp (k)')
-    plt.ylabel('Absolute Magnitude (K-band)')
-    plt.title('HR diagram')
-    plt.scatter(test_dataset['TEFF'], test_labels, alpha=0.1)
-    plt.scatter(test_dataset['TEFF'], test_predictions, alpha=0.1)
-    plt.savefig('HR diagram')
-    plt.show()
 
-
-def plot_regression(lims = [-15, 15], alpha=0.05):
+def plot_regression(lims=[-15, 15], alpha=0.05):
     regression = (test_labels - test_predictions)
     plt.scatter(test_labels, regression, alpha=alpha)
     plt.xlabel('True Values [Abs_Mag]')
@@ -102,10 +102,42 @@ def plot_regression(lims = [-15, 15], alpha=0.05):
     plt.ylim(lims)
     _ = plt.plot(lims, np.zeros(len(lims)))
 
-def histogram(range = [-1, 1],  bins= 50 ):
-    perc_errors = (test_labels - test_predictions)/test_predictions
-    plt.hist(perc_errors, bins=bins, range=range)
 
-def random():
-    plt.scatter(test_dataset['TEFF'], test_labels, c=test_dataset['Grav'], alpha=0.1)
-    i = np.where(test_dataset.iloc[:, 1] < 3)[0]
+def histogram(range=[-1, 1], bins=50):
+    plt.figure()
+    plt.hist(perc_errors, bins=bins, range=range)
+    plt.show()
+
+def plot_hr(Mag=test_labels):
+    plt.figure()
+    plt.scatter(test_dataset['TEFF'], Mag, c=test_dataset['Grav'], alpha=0.1)
+    plt.xlim(7500, 3000)
+    plt.xscale('log')
+    plt.ylim(10, -12)
+    plt.xlabel('Temp (k)')
+    plt.ylabel('Absolute Magnitude (K-band)')
+    plt.title('HR diagram')
+    plt.show()
+
+def plot_error_hr():
+        plt.figure()
+        plt.scatter(test_dataset['TEFF'], test_labels, alpha=0.1)
+        plt.scatter(test_dataset['TEFF'][abs(perc_errors) > 0.3], test_labels[abs(perc_errors) > 0.3], alpha=0.1)
+        plt.xlim(7500, 3000)
+        plt.xscale('log')
+        plt.ylim(10, -12)
+        plt.xlabel('Temp (k)')
+        plt.ylabel('Absolute Magnitude (K-band)')
+        plt.title('HR diagram (Where relative error > 0.3)')
+        plt.show()
+
+def plot_parallaxerror_hr():
+    plt.figure()
+    plt.scatter(test_dataset['TEFF'], test_predictions, c=parallax_error_test, alpha=0.1)
+    plt.xlim(7500, 3000)
+    plt.xscale('log')
+    plt.ylim(10, -12)
+    plt.xlabel('Temp (k)')
+    plt.ylabel('Absolute Magnitude (K-band)')
+    plt.title('HR diagram')
+    plt.show()
