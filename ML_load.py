@@ -3,25 +3,27 @@ import pandas as pd
 import tensorflow as tf
 import numpy as np
 
-data1 = pd.read_csv('ALL_withapparent_DATA_r12.csv')
-data2 = pd.read_csv('ALL_withapparent_DATA_r13.csv')
+data = pd.read_csv('Full_DATA_r12.csv')
 
-data1 = data1[(data1['Parallax_error'] < 0.15)]
-data2 = data2[(data2['Parallax_error'] < 0.15)]
+data = data[(data['Parallax_error'] < 0.15)]
 
-data = data1.append(data2, ignore_index = True)
+Apparent = data.pop('Apparent')
+Extinction = data.pop('Extinction')
+parallax_error = data.pop('Parallax_error')
+parallax = data.pop('parallax')
+g = data.pop('G')
+G_mag_train = g - 5 * np.log10((1/(parallax/1000)) / 10)
+BP = data.pop('BP')
+RP = data.pop('RP')
+vscatter_train = data.pop('vscatter')
 
-
-Apparent_test = data.pop('Apparent')
-Extinction_test = data.pop('Extinction')
-parallax_error_test = data.pop('Parallax_error')
-parallax_test = data.pop('parallax')
 
 
 # sns.pairplot(train_dataset[["Abs_MAG", "TEFF", "Grav", "Metal"]], diag_kind="kde")
 
 train_stats = data.describe()
 train_stats.pop("Abs_MAG")
+
 train_stats = train_stats.transpose()
 
 test_labels = data.pop('Abs_MAG')
@@ -33,14 +35,14 @@ def norm(x):
 
 normed_test_data = norm(data)
 
-model = tf.keras.models.load_model('largeNet_15perc_noflattening.h5')
+model = tf.keras.models.load_model('singlelayerNet_15perc_cutBinaries.h5')
 
 test_predictions = model.predict(normed_test_data).flatten()
 perc_errors = (test_labels - test_predictions) / test_predictions
 
-distance_test = (1/(parallax_test/1000))
+distance_test = (1/(parallax/1000))
 
-distance_prediction = 10*10**((test_predictions+Extinction_test-Apparent_test)/-5)
+distance_prediction = 10*10**((test_predictions+Extinction-Apparent)/-5)
 regression = (distance_test - distance_prediction) / distance_test
 
 title = 'largeNet_15perc_noflattening.h5'
@@ -109,7 +111,20 @@ def regression_pergrav():
         plt.figure()
         plt.title(title + 'Grav: ' + str(i))
         plt.scatter(distance_test[(data['Grav'] < i) & (data['Grav'] > i - 1)],
-                    regression[(data['Grav'] < i) & (data['Grav'] > i - 1)], s=1)
+                    regression[(data['Grav'] < i) & (data['Grav'] > i - 1)], s=0.1)
         plt.ylim([-1, 1])
         plt.xlim([-100, 4000])
         plt.show()
+
+
+def plot_predict_dist():
+    plt.figure()
+    a = plt.axes(aspect='equal')
+    plt.scatter(distance_test, distance_prediction, s = 0.01,alpha=0.3)
+    plt.xlabel('True Values [Abs_Mag]')
+    plt.ylabel('Predictions [Abs_Mag]')
+    lims = [0, 10000]
+    plt.xlim(lims)
+    plt.ylim(lims)
+    _ = plt.plot(lims, lims)
+    plt.show()

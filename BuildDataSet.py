@@ -12,9 +12,13 @@ parallax = data[1].data['GAIA_PARALLAX']
 parallax_err = data[1].data['GAIA_PARALLAX_ERROR']
 Kmag = data[1].data['K']
 extinction = data[1].data['AK_WISE']
+gaia_G = data[1].data['GAIA_PHOT_G_MEAN_MAG']
+gaia_BP = data[1].data['GAIA_PHOT_BP_MEAN_MAG']
+gaia_RP = data[1].data['GAIA_PHOT_RP_MEAN_MAG']
+Vscatter = data[1].data['VSCATTER']
 
 stars = pd.DataFrame()
-columns = ['Abs_MAG', 'TEFF', 'Grav', 'Metal', 'Apparent', 'Extinction', 'Parallax_error', 'parallax']
+columns = ['Abs_MAG', 'TEFF', 'Grav', 'Metal', 'Apparent', 'Extinction', 'Parallax_error', 'parallax', 'G', 'BP', 'RP', 'vscatter']
 
 
 for i, id in enumerate(ids):
@@ -22,11 +26,11 @@ for i, id in enumerate(ids):
     parallax_error_perc = parallax_err[i] / parallax[i]
 
     Abs_mag = Kmag[i] - 5 * np.log10((1 / (parallax[i]/1000)) / 10) - extinction[i]
-    star = pd.DataFrame([[Abs_mag, TEFF[i], Grav[i], Metal[i], Kmag[i], extinction[i], parallax_error_perc, parallax[i]]], columns=columns)
+    star = pd.DataFrame([[Abs_mag, TEFF[i], Grav[i], Metal[i], Kmag[i], extinction[i], parallax_error_perc, parallax[i], gaia_G[i], gaia_BP[i], gaia_RP[i],Vscatter[i]]], columns=columns)
     stars = stars.append(star, ignore_index=True)
     print(i)
 
 stars = stars[(stars['Abs_MAG'] < 100) & (stars['TEFF'] > 0) & (stars['Grav'] > 0) & (stars['Metal'] > -9000) & (
         stars['Abs_MAG'] > -40)]
 
-stars.to_csv('ALL_withapparent_DATA_r12.csv', index=False)
+stars.to_csv('Full_DATA_r12.csv', index=False)

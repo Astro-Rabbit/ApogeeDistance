@@ -6,16 +6,17 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-data = pd.read_csv('ALL_withapparent_DATA_r13.csv')
+data = pd.read_csv('noBinaries_data_r12.csv')
 
 
 data = data[(data['Parallax_error'] < 0.15)]
 
 
-
-
 train_dataset = data.sample(frac=0.8, random_state=0)
 test_dataset = data.drop(train_dataset.index)
+
+train_dataset.to_csv('trainsample.csv')
+test_dataset.to_csv('testsample.csv')
 
 flatten = False
 
@@ -26,7 +27,7 @@ if flatten == True:
         g = train_dataset[(train_dataset['Grav']> bin) & (train_dataset['Grav']< (bin+0.25))]
         if len(g) > 20000:
             frac = 20000/len(g)
-            g = g.sample(frac = frac, random_state = 0)
+            g = g.sample(frac = frac, random_state = 1)
         new_train = new_train.append(g, ignore_index=True)
     train_dataset = new_train
 
@@ -34,15 +35,25 @@ Apparent = train_dataset.pop('Apparent')
 Extinction = train_dataset.pop('Extinction')
 parallax_error = train_dataset.pop('Parallax_error')
 parallax = train_dataset.pop('parallax')
+g = train_dataset.pop('G')
+G_mag_train = g - 5 * np.log10((1/(parallax/1000)) / 10)
+BP = train_dataset.pop('BP')
+RP = train_dataset.pop('RP')
+vscatter_train = train_dataset.pop('vscatter')
 
 
 Apparent_test = test_dataset.pop('Apparent')
 Extinction_test = test_dataset.pop('Extinction')
 parallax_error_test = test_dataset.pop('Parallax_error')
 parallax_test = test_dataset.pop('parallax')
+g_test = test_dataset.pop('G')
+G_mag_test = g_test - 5 * np.log10((1/(parallax_test/1000)) / 10)
+BP_test = test_dataset.pop('BP')
+RP_test = test_dataset.pop('RP')
+vscatter_test = test_dataset.pop('vscatter')
 
 
-# sns.pairplot(train_dataset[["Abs_MAG", "TEFF", "Grav", "Metal"]], diag_kind="kde")
+sns.pairplot(train_dataset[["Abs_MAG", "TEFF", "Grav", "Metal"]], diag_kind="kde")
 
 train_stats = data.describe()
 train_stats.pop("Abs_MAG")
@@ -50,7 +61,14 @@ train_stats.pop('Apparent')
 train_stats.pop('Extinction')
 train_stats.pop('Parallax_error')
 train_stats.pop('parallax')
+train_stats.pop('G')
+train_stats.pop('RP')
+train_stats.pop('BP')
+train_stats.pop('vscatter')
+
 train_stats = train_stats.transpose()
+
+train_stats.to_csv('trainstats.csv',  index=False)
 
 train_labels = train_dataset.pop('Abs_MAG')
 test_labels = test_dataset.pop('Abs_MAG')
@@ -60,6 +78,7 @@ def norm(x):
     return (x - train_stats['mean']) / train_stats['std']
 
 
+
 normed_train_data = norm(train_dataset)
 normed_test_data = norm(test_dataset)
 
@@ -67,10 +86,6 @@ normed_test_data = norm(test_dataset)
 def build_model():
     model = tf.keras.Sequential([
         tf.keras.layers.Dense(16, activation='relu', input_shape=[len(train_dataset.keys())]),
-        tf.keras.layers.Dense(8, activation='relu'),
-        tf.keras.layers.Dropout(0.01),
-        tf.keras.layers.Dense(4, activation='relu'),
-        tf.keras.layers.Dense(2, activation='relu'),
         tf.keras.layers.Dense(1)
     ])
 
@@ -91,10 +106,10 @@ EPOCHS = 500
 history = model.fit(
     normed_train_data, train_labels,
     epochs=EPOCHS, validation_split=0.2, verbose=0,
-    callbacks=[early_stop, tfdocs.modeling.EpochDots()])
+    callbacks=[early_stop])
 
 
-model.save('supersmallNet_15perc_noflattening.h5')
+model.save('singlelayerNet_15perc_cutBinaries.h5')
 
 
 
@@ -135,7 +150,7 @@ def histogram(range=[-1, 1], bins=50):
 
 def plot_hr(Mag=test_labels):
     plt.figure()
-    plt.scatter(test_dataset['TEFF'], Mag, c=test_dataset['Grav'], alpha=0.1)
+    plt.scatter(test_dataset['TEFF'], Mag, c=test_dataset['Grav'], alpha=0.1, s = 0.01)
     plt.xlim(7500, 3000)
     plt.xscale('log')
     plt.ylim(10, -12)
@@ -145,16 +160,16 @@ def plot_hr(Mag=test_labels):
     plt.show()
 
 def plot_error_hr():
-        plt.figure()
-        plt.scatter(test_dataset['TEFF'], test_labels, alpha=0.1)
-        plt.scatter(test_dataset['TEFF'][abs(perc_errors) > 0.3], test_labels[abs(perc_errors) > 0.3], alpha=0.1)
-        plt.xlim(7500, 3000)
-        plt.xscale('log')
-        plt.ylim(10, -12)
-        plt.xlabel('Temp (k)')
-        plt.ylabel('Absolute Magnitude (K-band)')
-        plt.title('HR diagram (Where relative error > 0.3)')
-        plt.show()
+    plt.figure()
+    plt.scatter(test_dataset['TEFF'], test_labels, alpha=0.1)
+    plt.scatter(test_dataset['TEFF'][abs(perc_errors) > 0.3], test_labels[abs(perc_errors) > 0.3], alpha=0.1)
+    plt.xlim(7500, 3000)
+    plt.xscale('log')
+    plt.ylim(10, -12)
+    plt.xlabel('Temp (k)')
+    plt.ylabel('Absolute Magnitude (K-band)')
+    plt.title('HR diagram (Where relative error > 0.3)')
+    plt.show()
 
 def plot_parallaxerror_hr():
     plt.figure()
@@ -171,7 +186,41 @@ def regression_pergrav():
     for i in range(1, 6):
         plt.figure()
         plt.scatter(distance_test[(data['Grav'] < i) & (data['Grav'] > i - 1)],
-                    regression[(data['Grav'] < i) & (data['Grav'] > i - 1)], s=1)
+                    regression[(data['Grav'] < i) & (data['Grav'] > i - 1)], s=0.01)
         plt.ylim([-1, 1])
         plt.xlim([-100, 4000])
+        plt.title('regression plot for Grav:' + str(i) + ' -No flattening model')
         plt.show()
+
+
+def plot_predict_dist():
+    plt.figure()
+    a = plt.axes(aspect='equal')
+    plt.scatter(distance_test, distance_prediction, s=0.01, alpha=0.3)
+    plt.xlabel('True Values [Abs_Mag]')
+    plt.ylabel('Predictions [Abs_Mag]')
+    lims = [0, 10000]
+    plt.xlim(lims)
+    plt.ylim(lims)
+    _ = plt.plot(lims, lims)
+    plt.show()
+
+def gaia_hr():
+    plt.figure()
+    plt.scatter((BP - RP), G_mag_test, s=1, alpha=0.1)
+    plt.xlim(0, 5)
+    plt.ylim(13, -2)
+    plt.xlabel('Gaia BP-RP colour')
+    plt.ylabel('Absolute Magnitude Gaia G')
+    plt.title('Gaia HR diagram')
+    plt.show()
+
+def plot_regression_hist():
+    for i in range(1, 6):
+        plt.figure()
+        plt.hist(regression[(data['Grav'] < i) & (data['Grav'] > i - 1)], bins=200)
+        plt.title('regression histogram for Grav:' + str(i) + ' -No flattening model')
+        plt.xlim(-1, 1)
+        plt.show()
+
+
