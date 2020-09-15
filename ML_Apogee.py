@@ -6,17 +6,22 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-data = pd.read_csv('noBinaries_data_r12.csv')
+# data = pd.read_csv('r13_withCN_nobinaries.csv')
+#
+#
+# data = data[(abs(data['Parallax_error']) < 0.15)]
+#
+#
+# train_dataset = data.sample(frac=0.8, random_state=0)
+# test_dataset = data.drop(train_dataset.index)
+#
+# train_dataset.to_csv('trainsample_withcarbon.csv')
+# test_dataset.to_csv('testsample_withcarbon.csv')
 
+train_dataset = pd.read_csv('trainsample_withClustersadded8112020x3_nitroFixed.csv')
+test_dataset = pd.read_csv('testsample_withcarbon.csv')
+test_dataset.pop('Unnamed: 0')
 
-data = data[(data['Parallax_error'] < 0.15)]
-
-
-train_dataset = data.sample(frac=0.8, random_state=0)
-test_dataset = data.drop(train_dataset.index)
-
-train_dataset.to_csv('trainsample.csv')
-test_dataset.to_csv('testsample.csv')
 
 flatten = False
 
@@ -31,6 +36,7 @@ if flatten == True:
         new_train = new_train.append(g, ignore_index=True)
     train_dataset = new_train
 
+id = train_dataset.pop('APOGEE_ID')
 Apparent = train_dataset.pop('Apparent')
 Extinction = train_dataset.pop('Extinction')
 parallax_error = train_dataset.pop('Parallax_error')
@@ -41,7 +47,7 @@ BP = train_dataset.pop('BP')
 RP = train_dataset.pop('RP')
 vscatter_train = train_dataset.pop('vscatter')
 
-
+id_test = test_dataset.pop('APOGEE_ID')
 Apparent_test = test_dataset.pop('Apparent')
 Extinction_test = test_dataset.pop('Extinction')
 parallax_error_test = test_dataset.pop('Parallax_error')
@@ -53,22 +59,15 @@ RP_test = test_dataset.pop('RP')
 vscatter_test = test_dataset.pop('vscatter')
 
 
-sns.pairplot(train_dataset[["Abs_MAG", "TEFF", "Grav", "Metal"]], diag_kind="kde")
+# sns.pairplot(train_dataset[["Abs_MAG", "TEFF", "Grav", "Metal"]], diag_kind="kde")
 
-train_stats = data.describe()
+train_stats = train_dataset.describe()
 train_stats.pop("Abs_MAG")
-train_stats.pop('Apparent')
-train_stats.pop('Extinction')
-train_stats.pop('Parallax_error')
-train_stats.pop('parallax')
-train_stats.pop('G')
-train_stats.pop('RP')
-train_stats.pop('BP')
-train_stats.pop('vscatter')
+
 
 train_stats = train_stats.transpose()
 
-train_stats.to_csv('trainstats.csv',  index=False)
+train_stats.to_csv('trainstats_withcarbon_clusterX3.csv',  index=True)
 
 train_labels = train_dataset.pop('Abs_MAG')
 test_labels = test_dataset.pop('Abs_MAG')
@@ -81,11 +80,15 @@ def norm(x):
 
 normed_train_data = norm(train_dataset)
 normed_test_data = norm(test_dataset)
+carbon = normed_train_data.pop('carbon')
+nitrogen = normed_train_data.pop('nitrogen')
 
+carbon2 = normed_test_data.pop('carbon')
+nitrogen2 = normed_test_data.pop('nitrogen')
 
 def build_model():
     model = tf.keras.Sequential([
-        tf.keras.layers.Dense(16, activation='relu', input_shape=[len(train_dataset.keys())]),
+        tf.keras.layers.Dense(16, activation='relu', input_shape=[len(normed_train_data.keys())]),
         tf.keras.layers.Dense(1)
     ])
 
@@ -109,7 +112,7 @@ history = model.fit(
     callbacks=[early_stop])
 
 
-model.save('singlelayerNet_15perc_cutBinaries.h5')
+model.save('8182020WithclustersnolmcorsmcX3_NONitro.h5')
 
 
 
@@ -124,7 +127,7 @@ regression = (distance_test - distance_prediction) / distance_test
 
 def plot_predict():
     a = plt.axes(aspect='equal')
-    plt.scatter(test_labels, test_predictions, alpha=0.3)
+    plt.scatter(test_labels, test_predictions, alpha=0.3, s = 1)
     plt.xlabel('True Values [Abs_Mag]')
     plt.ylabel('Predictions [Abs_Mag]')
     lims = [-10, 15]
@@ -218,7 +221,7 @@ def gaia_hr():
 def plot_regression_hist():
     for i in range(1, 6):
         plt.figure()
-        plt.hist(regression[(data['Grav'] < i) & (data['Grav'] > i - 1)], bins=200)
+        plt.hist(regression[(data['Grav'] < i) & (data['Grav'] > i - 1)], bins=np.arange(-1,1,0.05))
         plt.title('regression histogram for Grav:' + str(i) + ' -No flattening model')
         plt.xlim(-1, 1)
         plt.show()
