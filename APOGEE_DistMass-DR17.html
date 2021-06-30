@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html" charset="utf-8">
+        <title>Data Model: model</title>
+        <link rel="stylesheet" href="/datamodel/datamodel.css" type="text/css" />
+        <link rel="icon" href="/datamodel/sdss.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="/datamodel/sdss.ico" type="image/x-icon" />
+    </head>
+    <body>
+
+    <div id="intro">
+        <h1>Data Model: model</h1>
+        <dl>
+        <dt>General Description</dt>
+        <dd>
+        This Value-added catalog contains the absolute magnitudes, distances, and masses for dr17 stars predicted
+            using a simple neural network. File also contains the stellar parameters used by the neural network. Select giant stars
+            also have a predicted age calculated by comparing the mass to isochrones.
+        </dd>
+
+        <dt>Naming Convention</dt>
+        <dd id="filename"><code>apogee_distmass-DRNUMBER\.fits</code>
+
+        <dt>Approximate Size</dt>
+        <dd id="filesize">733901 objects; 116,832 KB</dd>  <!--edit size-->
+
+        <dt>File Type</dt>
+        <dd id="filetype">FITS</dd>
+
+        <dt id="sections">Sections</dt>
+
+            <ul>
+                <li><a href="#hdu0">HDU0: PRIMARY</a></li>
+                <li><a href="#hdu1">HDU1: </a></li>
+            </ul>
+        </dd>
+        </dl>
+    </div>
+
+    <div id="hdu0">
+    <h2>HDU0: Null extension</h2>
+    <p>This is a null header.</p></div>
+
+    </div>
+    <div id="hdu1">
+        <h2>HDU1: APOGEE DistMass catalog</h2>
+        <p>[HDU 1 contains the catalog as binary table]</p>
+        <dl>
+        <dt>HDU Type</dt><dd>BINARY TABLE</dd>
+        <dt>HDU Size</dt><dd>650 bytes</dd>
+        </dl>
+
+        <table>
+            <caption>Header Table Caption for HDU1</caption>
+            <thead id="head1">
+                <tr><th>Key</th><th>Value</th><th>Type</th><th>Comment</th></tr>
+            </thead>
+             <tbody id="body1">
+                    <tr><td>XTENSION</td><td>BINTABLE</td><td>Not Implemented</td><td>binary table extension</td></tr>
+                    <tr><td>TFIELDS</td><td>16</td><td>Not Implemented</td><td>number of table fields</td></tr>
+             </tbody>
+        </table>
+
+        <table>
+            <caption>Binary Table Caption for HDU1</caption>
+            <thead id="binhead1">
+                <tr><th>Name</th><th>Type</th><th>Unit</th><th>Description</th></tr>
+            </thead>
+             <tbody id="binbody1">
+                    <tr><td>ID</td><td>char[18]</td><td></td><td>TMASS-STYLE object name</td></tr>
+                    <tr><td>TEFF</td><td>float64</td><td>K</td><td>DR17 effective temperature/td></tr>
+                    <tr><td>LOGG</td><td>float64</td><td></td><td>DR17 surface gravity</td></tr>
+                    <tr><td>M_H</td><td>float64</td><td></td><td>DR17 metallicity</td></tr>
+                    <tr><td>C_FE</td><td>float64</td><td></td><td>DR17 [C/Fe] abundance</td></tr>
+                    <tr><td>N_FE</td><td>float64</td><td></td><td>DR17 [N/Fe] abundance</td></tr>
+                    <tr><td>GAIAEDR3_DIST</td><td>float64</td><td></td><td>DR17 Gaia distance from GAIAEDR3_R_MED_PHOTOGEO column</td></tr>
+                    <tr><td>EXTINCTION</td><td>float64</td><td></td><td>K-band Extinction comes 3 separate sources depending on star location and availability of AK_WISE data. Sources used are: AK_WISE, AK_TARG, and SFD_EBV</td></tr>
+                    <tr><td>MAG</td><td>float64</td><td></td><td>Apparent magnitude in K-Band</td></tr>
+                    <tr><td>ABS_MAG</td><td>float64</td><td></td><td>DistMass predicted absolute magnitude</td></tr>
+                    <tr><td>ABS_MAG_ERR</td><td>float64</td><td></td><td>DistMass absolute magnitude uncertainty</td></tr>
+                    <tr><td>DISTANCE</td><td>float64</td><td>pc</td><td>DistMass predicted distance</td></tr>
+                    <tr><td>DISTANCE_ERR</td><td>float64</td><td>pc</td><td>DistMass distance uncertainty</td></tr>
+                    <tr><td>MASS</td><td>float64</td><td>Solar Mass</td><td>DistMass predicted mass</td></tr>
+                    <tr><td>MASS_ERR</td><td>float64</td><td>Solar Mass</td><td>DistMass mass uncertainty</td></tr>
+                    <tr><td>TRAIN_MASS</td><td>float64</td><td>Solar Mass</td><td>Masses used for training mass model</td></tr>
+                    <tr><td>AGE</td><td>float64</td><td>yr</td><td>DistMass predicted age</td></tr>
+                    <tr><td>BITMASK</td><td></td><td></td><td>Flag to indicate various remarks about star: Bit 1 = Part of distance training set. Bit 2 = Outside training boundaries for mass model, Bit 3 = Mass training sourced from APOCASC, Bit 4 = Mass training source from Berger et al, Bit 5 = Serenelli et al</td></tr>
+                    <tr><td>DISO</td><td></td><td>pc</td><td>NMSU distances. Array containing the Max, Median, and Mean of probability distribution function</td></tr>
+             </tbody>
+        </table>
+    </div>
+
+<!--    <div id="example">-->
+<!--        <h2>Examples</h2>-->
+<!--        <p>This section is the place to put examples of use and other comments.-->
+<!--        You may also add example files to the datamodel and link to them here.</p>-->
+<!--        <p><a href="template.html">Example File</a></p>-->
+<!--    </div>-->
+
+    </body>
+</html>
